@@ -1,0 +1,33 @@
+<!DOCTYPE html><!--HTML5 doctype-->
+<html>
+<head>
+	<title>Your New Application</title>
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=0" />
+	<style type="text/css">
+		/* Prevent copy paste for all elements except text fields */
+		*  { -webkit-user-select:none; -webkit-tap-highlight-color:rgba(255, 255, 255, 0); }
+		input, textarea  { -webkit-user-select:text; }
+		body { background-color:white; color:black }
+	</style>
+    
+    <script src='script/jquery.js'></script>
+    <script src='script/Dijkstras.js'></script>
+    <script src='script/main.js'></script>
+    
+</head>
+<body id="body">
+	<canvas id="myCanvas" width="450" height="600" style="border:1px solid #000000;">
+	</canvas>
+    <br>
+    <button id="zoom_out">Zoom +</button>
+    <button id="zoom_in">Zoom -</button>
+    <button id="offsetY_out">Move Y (+) </button>
+    <button id="offsetY_in">Move Y (-) </button>
+
+    <button id="offsetX_out">Move X (+) </button>
+    <button id="offsetX_in">Move X (-) </button>
+
+</body>
+</html>
+
