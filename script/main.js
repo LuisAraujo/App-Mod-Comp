@@ -18,6 +18,19 @@ var ready = [];
 ready[0] =false;
 ready[1] = false;
 
+var yourGPSposition;
+var yourDistiny = 7;
+
+//limites máximos e minimos para buscar buracos em uma area
+var limiteMax = [];
+limiteMax[0] = -Infinity;
+limiteMax[1] = -Infinity;
+var limiteMin = [];
+limiteMin[0] = Infinity;
+limiteMin[1] = Infinity;
+
+
+
 //CARREGA AS IMAGENS (RECURSOS)
 function loadSources(){
     imgLocal = new Image();
@@ -71,55 +84,78 @@ function startApp(){
     yourGPSposition = getNodeAroundTo(  -12.202247, -38.975395);
 
     //teste para obter o melhor caminho
-    getLessWay(yourGPSposition,7);
+    getLessWay(yourGPSposition, yourDistiny);
 
 
     //Botões de interacao
     $("#zoom_out").click(function(){
-        zoom+=10;
+
+        oldX =  offsetX*(zoom/100);
+        difX= oldX - offsetX;
+
+        zoom+=1;
+        offsetX =  offsetX*(zoom/100);
+        offsetX + difX;
+
+        oldY =  offsetY*(zoom/100);
+        difY= oldY - offsetY;
+
+
+        offsetY =  offsetY*(zoom/100);
+        difY= oldY - offsetY;
+
         clearCanvas();
+
         drawPaths();
-        getLessWay(2,7);
+        getLessWay(yourGPSposition, yourDistiny);
+
 
     });
 
     $("#zoom_in").click(function(){
-        zoom-=10;
+
+        oldX =  200*(zoom/100);
+        difX= oldX - offsetX;
+
+        zoom-=1;
+
+        offsetX =  offsetX*(zoom/100);
+        offsetX + difX;
+
+        oldY =  650*(zoom/100);
+        difY= oldY - offsetY;
+
+
+        offsetY =  offsetY*(zoom/100);
+        offsetY + difY;
+
+        clearCanvas();
         clearCanvas();
         drawPaths();
-        getLessWay(2,7);
+        getLessWay(yourGPSposition, yourDistiny);
     });
 
-    $("#offsetX_out").click(function(){
-        offsetX+=0.1;
-        clearCanvas();
-        drawPaths();
-        getLessWay(2,7);
-    });
-
-    $("#offsetX_in").click(function(){
-        offsetX-=0.1;
-        clearCanvas();
-        drawPaths();
-        getLessWay(2,7);
-    });
-
-    $("#offsetY_out").click(function(){
-        offsetY+=0.1;
-        clearCanvas();
-        drawPaths();
-        getLessWay(2,7);
-    });
-
-    $("#offsetY_in").click(function(){
-        offsetY-=0.1;
-        clearCanvas();
-        drawPaths();
-        getLessWay(2,7);
-    });
 }
 
 
+function changeOffSet(axis, operation, value){
+    if(axis == "x"){
+            if(operation == "+")
+                offsetX+=value;
+            else if(operation == "-")
+                offsetX-=value;
+    }else if(axis == "y"){
+        if(operation == "+")
+            offsetY+=value;
+        else if(operation == "-")
+            offsetY-=value;
+    }
+
+    clearCanvas();
+    drawPaths();
+    getLessWay(yourGPSposition, yourDistiny);
+
+ }
 
 //INICIA O CANVAS
 function startCanvas(){
@@ -131,11 +167,17 @@ function startCanvas(){
     //zoom inicial
     zoom = 100;
     //offset para o canvas
-    offsetX = zoom/60;
+    offsetX = 200;
+    offsetX =  offsetX*(zoom/100);
+
     //offset para o canvas
-    offsetY = zoom/15;
+    offsetY = 650;
+    offsetY = offsetY*(zoom/100);
 
     clearCanvas();
+
+
+
 }
 
 //LIMPA CANVAS
@@ -162,7 +204,11 @@ function drawPoint(x, y, mode){
 
 
 //DESENHA OS CAMINHOS DO GRAFO
+
+//ao pecorrer todos os nos podemos quardar os limites maximos e minimos para
+//a busca de buracos na area
 function drawPaths(){
+
 	g = GraphMain.graph;
 
     var array = Object.keys(g).map(function (key) {return g[key]});
@@ -174,6 +220,9 @@ function drawPaths(){
         cord = convertCordToPoint(  array[i]["Lat"],  array[i]["Log"]);
         latStart =  cord[0];
         logStart =  cord[1];
+
+        //calcula pontos Latitude e Longitude Máxima e Minima
+        calcMaxAndMinCord(array[i]);
 
         c=0;
 
@@ -187,8 +236,12 @@ function drawPaths(){
                 ctx.beginPath();
                 ctx.strokeStyle = "#fff";
 
-                ctx.moveTo( (logStart + offsetY) * zoom, (latStart +offsetX) * zoom);
-                ctx.lineTo( (logEnd  +offsetY) * zoom, (latEnd + offsetX ) * zoom);
+                //ctx.moveTo( (latStart * -zoom)  +offsetX, (logStart * -zoom) + offsetY);
+                //ctx.lineTo( (latEnd  * -zoom) + offsetX, (logEnd  * -zoom)  +offsetY);
+
+                ctx.moveTo(logStart, latStart);
+                ctx.lineTo(logEnd , latEnd );
+
                 ctx.lineWidth = 5;
                 ctx.stroke();
 
@@ -197,6 +250,19 @@ function drawPaths(){
     }
 };
 
+
+//calcula a cordenada minima e maxima para obter os buracos nessa area
+function calcMaxAndMinCord(c){
+    if(latStart > limiteMax[0])
+        limiteMax[0] = c["Lat"];
+    if(logStart > limiteMax[1])
+        limiteMax[1] = c["Log"];
+    if(latStart < limiteMin[0])
+        limiteMin[0] = c["Lat"];
+    if(logStart < limiteMin[1])
+        limiteMin[1] = c["Log"];
+
+}
 //DESENHA O CAMINHO ENCONTRADO
 //param é retorno do GraphMain.getPath(A,B)
 function drawFoundPaths(param){
@@ -233,8 +299,12 @@ function drawFoundPaths(param){
 
         ctx.beginPath();
         ctx.strokeStyle = "#00f";
-        ctx.moveTo( (logStart + offsetY) * zoom, (latStart +offsetX) * zoom);
-        ctx.lineTo( (logEnd  +offsetY) * zoom, (latEnd + offsetX ) * zoom);
+        //ctx.moveTo((latStart * -zoom)  +offsetX, (logStart * -zoom) + offsetY);
+        //ctx.lineTo((latEnd  * -zoom) + offsetX , (logEnd  * -zoom)  +offsetY);
+
+        ctx.moveTo(logStart, latStart);
+        ctx.lineTo( logEnd, latEnd);
+
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -295,7 +365,7 @@ function buildGraph(){
     fe[5][3] = [["5", 0], ["3", 0]];
     fe[6][3] = [["1", 0]];
 
-//    a = fe;
+    a = fe;
 
     //CRIANDO ARRAY COMO INDEX, pegando a posicao 0 das subarray de a.
     //Isso permite consultar os valores passando o index dos caminhos
@@ -336,23 +406,26 @@ function getLessWay(start, end){
     latEnd = cord[0];
     logEnd = cord[1];
 
-   drawPoint((logStart +offsetY) * zoom,   (latStart + offsetX) * zoom ,  "start");
-   drawPoint((logEnd +offsetY) * zoom,   (latEnd + offsetX) * zoom ,  "end");
+    drawPoint(logStart, latStart,  "start");
+    drawPoint(logEnd, latEnd ,  "end");
 
    //retorna um array com a posicao inicial e um subarray como o caminho
    path =  GraphMain.getPath( start.toString(), end.toString());
    //exiba distancia
-   showTextDistance(calcDistance(path));
-   //desenha o melhor caminho
-   drawFoundPaths(path);
+   if(path.length > 0){
+    showTextDistance(calcDistance(path));
+    //desenha o melhor caminho
+    drawFoundPaths(path);
+   }
 
 
 }
 
 //CALCULA A DISTÂNCIA DO CAMINHO
 // path é um retorno de GraphMeain.getPath(A,B)
-calcDistance = function(path){
+function calcDistance (path){
     g = GraphMain.graph;
+
     //calcula a distancia do inicio para o primeiro nó do path
     dist = g[path[0][0]][path[1][0]];
 
@@ -372,20 +445,21 @@ showTextDistance = function(dist){
 }
 
 
+
 //EVENTO DE CLICK DO MOUSE
 $(window).on('mouseup', function(e){
 
    var pos = getMousePos(canvas, e);
+
    //apenas se o clique for no canvas
-   if((pos.x <= canvas.width) && (pos.y <= canvas.height)){
-       //FAZER UM MODOLO DE CONVERSAO
-       //a impressao do ponto é invertidas
+   if( e.toElement.id == "myCanvas" ){
+
        c = convertPointToCord(pos.y, pos.x);
-       yourPos = getNodeAroundTo(c[0], c[1]);
+
+       yourDistiny = getNodeAroundTo(c[0], c[1]);
        clearCanvas();
        drawPaths();
-
-       getLessWay(yourPos, 7);
+       getLessWay(yourGPSposition, yourDistiny);
 
     }
 
@@ -394,12 +468,15 @@ $(window).on('mouseup', function(e){
 //CONVERTE UM PONTO DO CANVAS EM CORDENADA
 function convertPointToCord(x, y){
     //revertendo o ponto em Lat
-    x = (x/zoom) - offsetX;
-    x = (x/-1000) - OFFSET_LAT;
+    x = (x - offsetX)/-zoom;
+    x = (x/1000) - OFFSET_LAT;
 
     //revertendo o ponto em Log
-    y = (y/zoom) - offsetY;
-    y = (y/1000) - OFFSET_LOG;
+    y = (y - offsetY)/-zoom;
+    y = (y/-1000) - OFFSET_LOG;
+
+    console.log(x, y)
+
     return [x, y];
 
 }
@@ -415,12 +492,13 @@ function convertCordToPoint(Lat, Log){
     if(OFFSET_LOG==null)
         OFFSET_LOG = parseFloat(floorFigure(Log,2)*-1);
 
-
-    console.log(OFFSET_LOG);
-
     //covertendo Coord para Ponto
-    Lat = (OFFSET_LAT + Lat) * -1000;
-    Log = (OFFSET_LOG + Log)* 1000;
+
+    Lat = (OFFSET_LAT + Lat) * 1000;
+    Log = (OFFSET_LOG + Log)*   -1000;
+
+    Lat =  (Lat*-zoom)+offsetX;
+    Log =  (Log*-zoom)+offsetY;
 
     return [Lat, Log];
 
@@ -433,8 +511,8 @@ function getMousePos(canvas, evt) {
     var rect = canvas.getBoundingClientRect();
 
     return {
-        x: evt.clientX - rect.left - offsetX,
-        y: evt.clientY - rect.top - offsetY
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
     };
 }
 
